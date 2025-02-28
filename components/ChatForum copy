@@ -1,0 +1,74 @@
+
+"use client"
+import { useState, useEffect } from 'react';
+import { useCreateChatClient, Chat, Channel, ChannelHeader, MessageInput, MessageList, Thread, Window } from 'stream-chat-react';
+
+import 'stream-chat-react/dist/css/v2/index.css';
+import { useUser } from '@clerk/nextjs';
+const apiKey = 'r3fe8uq92sfg';
+// const userId = 'user_2tJ7lhm2I2aOD5J7HoJbkhkvpiL';
+// const userName = 'Harry';
+const userToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlcl8ydEo3bGhtMkkyYU9ENUo3SG9KYmtoa3ZwaUwifQ.RxrLVKtBZxIdZQWGRzz6lg9uia4jb1nkUxvFmJlL37Q';
+
+
+const ChatForum = ({slug}) => {
+  const [isLoaded, clearUser] = useUser()
+  const [user, setUser] = useState()
+
+  useEffect(() => {
+    const userId = clearUser?.id;
+    const userName = clearUser?.fullName;
+    if (isLoaded) {
+      const user = {
+        id: userId,
+        name: userName,
+        image: `https://getstream.io/random_png/?name=${userName}`,
+      };
+      setUser(user)
+    }
+
+  }, [isLoaded])
+
+
+  // function toTitleCase(str) {
+  //   return str.replace(
+  //     /\b[a-z]/g,
+  //     (char) => char.toUpperCase()
+  //   );
+  // }
+  const [channel, setChannel] = useState();
+  const client = useCreateChatClient({
+    apiKey,
+    tokenOrProvider: userToken,
+    userData: user,
+  });
+
+  useEffect(() => {
+    if (!client) return;
+
+    const channel = client.channel('messaging', slug, {
+      image: 'https://getstream.io/random_png/?name=react',
+      name: slug.toUpperCase() + ' Discussion',
+      members: [userId],
+    });
+
+    setChannel(channel);
+  }, [client]);
+
+  if (!client) return <div>Setting up client & connection...</div>;
+
+  return (
+    <Chat client={client}>
+      <Channel channel={channel}>
+        <Window>
+          <ChannelHeader />
+          <MessageList />
+          <MessageInput />
+        </Window>
+        <Thread />
+      </Channel>
+    </Chat>
+  );
+};
+
+export default ChatForum;
